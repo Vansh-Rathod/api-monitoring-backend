@@ -14,15 +14,18 @@ public class AuthController : BaseApiController
 {
     private readonly IAuthRepository _authRepository;
     private readonly IJwtTokenService _jwtTokenService;
+    private readonly IPasswordHasherService _passwordHasherService;
     private readonly ILoggingService _loggingService;
 
     public AuthController(
         IAuthRepository authRepository,
         IJwtTokenService jwtTokenService,
+        IPasswordHasherService passwordHasherService,
         ILoggingService loggingService)
     {
         _authRepository = authRepository;
         _jwtTokenService = jwtTokenService;
+        _passwordHasherService = passwordHasherService;
         _loggingService = loggingService;
     }
 
@@ -40,8 +43,7 @@ public class AuthController : BaseApiController
                 return Unauthorized(FailResponse<AuthTokenResponseDto>("Invalid credentials.", "User not found or inactive."));
             }
 
-            // TODO: replace with secure password hashing verification (BCrypt/PBKDF2).
-            if (!string.Equals(user.PasswordHash, request.Password, StringComparison.Ordinal))
+            if (!_passwordHasherService.VerifyPassword(request.Password, user.PasswordHash))
             {
                 return Unauthorized(FailResponse<AuthTokenResponseDto>("Invalid credentials.", "Email or password is incorrect."));
             }

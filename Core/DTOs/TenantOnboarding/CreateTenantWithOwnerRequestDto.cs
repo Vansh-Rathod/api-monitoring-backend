@@ -8,5 +8,6 @@ public class CreateTenantWithOwnerRequestDto
     public string OwnerEmail { get; set; } = string.Empty;
     public string? OwnerFirstName { get; set; }
     public string? OwnerLastName { get; set; }
+    public string? Password { get; set; }
     public string? PasswordHash { get; set; }
 }

@@ -14,6 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddGenericServices();
 builder.Services.AddInfrastructure();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 var jwtKey = jwtSection["Key"] ?? throw new InvalidOperationException("Jwt:Key is missing in configuration.");

@@ -1,3 +1,4 @@
+using APIMonitoringSystem.Services;
 using Core.CommonModels;
 using Core.DTOs.Customers;
 using Core.DTOs.TenantOnboarding;
@@ -14,15 +15,18 @@ public class OnboardingController : BaseApiController
 {
     private readonly ITenantOnboardingRepository _tenantOnboardingRepository;
     private readonly ICustomerRepository _customerRepository;
+    private readonly IPasswordHasherService _passwordHasherService;
     private readonly ILoggingService _loggingService;
 
     public OnboardingController(
         ITenantOnboardingRepository tenantOnboardingRepository,
         ICustomerRepository customerRepository,
+        IPasswordHasherService passwordHasherService,
         ILoggingService loggingService)
     {
         _tenantOnboardingRepository = tenantOnboardingRepository;
         _customerRepository = customerRepository;
+        _passwordHasherService = passwordHasherService;
         _loggingService = loggingService;
     }
 
@@ -33,6 +37,18 @@ public class OnboardingController : BaseApiController
     {
         try
         {
+            var rawPassword = !string.IsNullOrWhiteSpace(request.Password)
+                ? request.Password
+                : request.PasswordHash;
+
+            if (string.IsNullOrWhiteSpace(rawPassword))
+            {
+                return BadRequest(FailResponse<CreateTenantWithOwnerResultDto>("Password is required for owner onboarding."));
+            }
+
+            request.PasswordHash = _passwordHasherService.HashPassword(rawPassword);
+            request.Password = null;
+
             var result = await _tenantOnboardingRepository.CreateTenantWithOwnerAsync(request);
             return Ok(OkResponse(result, "Tenant created successfully."));
         }
