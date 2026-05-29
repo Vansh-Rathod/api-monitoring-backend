@@ -1,23 +1,29 @@
-using System;
 using Microsoft.Azure.Functions.Worker;
+using APIMonitoringAzureFunctions.Services;
 using Microsoft.Extensions.Logging;
 
 namespace APIMonitoringAzureFunctions;
 
 public class Function1
 {
-    private readonly ILogger _logger;
+    private readonly IMonitorExecutionService _monitorExecutionService;
+    private readonly ILogger<Function1> _logger;
 
-    public Function1(ILoggerFactory loggerFactory)
+    public Function1(IMonitorExecutionService monitorExecutionService, ILogger<Function1> logger)
     {
-        _logger = loggerFactory.CreateLogger<Function1>();
+        _monitorExecutionService = monitorExecutionService;
+        _logger = logger;
     }
 
-    [Function("Function1")]
-    public void Run([TimerTrigger("0 */5 * * * *")] TimerInfo myTimer)
+    [Function("MonitorSchedulerFunction")]
+    public async Task Run([TimerTrigger("%MonitorSchedulerCron%")] TimerInfo myTimer, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("C# Timer trigger function executed at: {executionTime}", DateTime.Now);
-        
+        var startedAt = DateTime.UtcNow;
+        _logger.LogInformation("Monitor scheduler started at: {StartedAtUtc}", startedAt);
+
+        var executedCount = await _monitorExecutionService.ExecuteActiveMonitorsAsync(cancellationToken);
+        _logger.LogInformation("Monitor scheduler completed. ExecutedMonitors={ExecutedCount}", executedCount);
+
         if (myTimer.ScheduleStatus is not null)
         {
             _logger.LogInformation("Next timer schedule at: {nextSchedule}", myTimer.ScheduleStatus.Next);
